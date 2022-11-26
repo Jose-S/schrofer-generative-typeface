@@ -1,9 +1,11 @@
-from typing import List
-import networkx as nx
+# --------------- IMPORTS --------------
 
 # import matplotlib.pyplot as plt
 import numpy as np
+import networkx as nx
 from itertools import combinations
+
+# --------------- DEFINITIONS --------------
 
 # Graph Theory Definitons
 # Nodes (aka vertex): A single entity
@@ -12,15 +14,17 @@ from itertools import combinations
 # Path: A sequence of non-repeated edges (1st and last node have a degree of 1)
 # Cycle: A path that starts at a given node and ends at the same node
 
-# Graph Contants
-nodes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+# --------------- CONSTATNS --------------
+
+NODES = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 # 1 A 2 B 3
 # C   D   E
 # 4 F 5 G 6
 # H   I   J
 # 7 K 8 L 9
-edges: dict[str, tuple] = {
+EDGES: dict[str, tuple] = {
     "A": (1, 2),
     "B": (2, 3),
     "C": (1, 4),
@@ -36,7 +40,9 @@ edges: dict[str, tuple] = {
 }
 
 ## Edges List format flat (for debugging)
-all_edges = np.array(list(edges.values()))
+ALL_EDGES_FLAT = np.array(list(EDGES.values()))
+
+# --------------- FUNCTIONS --------------
 
 
 def generate_path_combinations(edges: list, r: int) -> list:
@@ -60,45 +66,55 @@ def generate_path_combinations(edges: list, r: int) -> list:
     return list(combinations(edges, r))
 
 
-# Return a list of edge tuples (ex: (1,2))
-# given arr = list of edge keys (ex = A)
-def getEdges(edge_keys: list) -> list[int]:
+def convert_to_edge_tuples(edge_keys: list) -> list[tuple[int, int]]:
     """
-    _summary_
+    Converts Edge Key List to Edge Tuple List
 
     Parameters
     ----------
-    edge_keys : List
-        _description_
+    edge_keys : list
+        A list of Edge Keys (ex: ["A", "C", "D"])
 
     Returns
     -------
-    list
-        A list of edge tuples(ex: [(1,2) ,(2,4) ,(4,1)])
+    list[tuple[int,int]]
+         A list of Edge tuples(ex: [(1,2) ,(2,4) ,(4,1)])
     """
-    # return a list of all edge values
-    # arr is a tuple of keys in edges
-    # uses list comprehension
-    return [edges[k] for k in edge_keys]
+    # uses list comprehension to convert Dict of Tuples to Lis tof Tuples
+    return [EDGES[k] for k in edge_keys]
 
 
 # Given a path length generate
 # Generate all possible graphs (forest) with
 # path_len edges in a graph with nodes (global)
-def generateGraphs(path_len, forest=False):
+def generateGraphs(path_len: int, forest: bool = False) -> list[nx.Graph]:
+    """
+    Generate a list of Graphs with path_len edges
 
-    graphs = []
-    # graphspath_len path graphs
-    paths = generate_path_combinations(edges, path_len)
-    print(len(paths))
-    graphs_len = len(paths)
-    for i in range(graphs_len):
+    Parameters
+    ----------
+    path_len : int
+        Length of Path (Numbe rof edges in Graph)
+    forest : bool, optional
+        Only generate forest graphs(no cycles), by default False
+
+    Returns
+    -------
+    list[nx.Graph]
+        List of Graphs (NX Objects)
+    """
+
+    graphs: list[nx.Graph] = []
+    paths = generate_path_combinations(EDGES, path_len)
+    paths_len = len(paths)
+
+    for i in range(paths_len):
         # get edge tuple list (A -> (1,2))
         # for each edge key in paths[i]
-        lst_of_edges = getEdges(paths[i])
+        lst_of_edges = convert_to_edge_tuples(paths[i])
         # create graph
         G = nx.Graph()
-        G.add_nodes_from(nodes)
+        G.add_nodes_from(NODES)
         G.add_edges_from(lst_of_edges)
         # diferentiate between forest and trees
         if forest and nx.is_forest(G):
@@ -127,12 +143,27 @@ def generateGraphs(path_len, forest=False):
 # def drawBareGraph(g):
 #     nx.draw(G, pos=positions, with_labels=True, width=2, font_weight="bold")
 
+# ----------- UTILITY FUNCTIONS -----------
 
-# calculate number of forest
-# with between min_edges and max_edges
-def calcNumForest(min_edges, max_edges):
-    count = 0
+
+def calc_num_forest(min_edges: int, max_edges: int) -> int:
+    """
+    Utility Function used to calculate number of Forest Graphs with min_edges to max_edges
+
+    Parameters
+    ----------
+    min_edges : int
+        Minimum edge count of forest
+    max_edges : int
+        Maximun edge count of forest
+
+    Returns
+    -------
+    int
+        Number of Forest with min_edges to max_edges
+    """
+    counter = 0
     for i in range(min_edges, max_edges + 1):
-        all_g = generateGraphs(i, forest=True)
-        count = count + len(all_g)
-    return count
+        G_List = generateGraphs(i, forest=True)
+        counter = counter + len(G_List)
+    return counter

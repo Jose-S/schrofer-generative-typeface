@@ -1,8 +1,16 @@
+from typing import List
 import networkx as nx
 
 # import matplotlib.pyplot as plt
 import numpy as np
 from itertools import combinations
+
+# Graph Theory Definitons
+# Nodes (aka vertex): A single entity
+# Edge: Connection between two nodes
+# Graph: Data structure formed by nodes and edges
+# Path: A sequence of non-repeated edges (1st and last node have a degree of 1)
+# Cycle: A path that starts at a given node and ends at the same node
 
 # Graph Contants
 nodes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -12,7 +20,7 @@ nodes = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 # 4 F 5 G 6
 # H   I   J
 # 7 K 8 L 9
-edges = {
+edges: dict[str, tuple] = {
     "A": (1, 2),
     "B": (2, 3),
     "C": (1, 4),
@@ -26,25 +34,52 @@ edges = {
     "K": (7, 8),
     "L": (8, 9),
 }
+
 ## Edges List format flat (for debugging)
 all_edges = np.array(list(edges.values()))
 
-# return list of all subsets of length r from arr
-def rSubset(arr, r):
 
-    # return list of all subsets of length r
+def generate_path_combinations(edges: list, r: int) -> list:
+    """
+    Generates a list of all path combinations of r-length
+
+    Parameters
+    ----------
+    edges : list
+        A list of edges used to generate path combinations
+    r : int
+        The lenght of each combination generated
+
+    Returns
+    -------
+    list
+        A list of all paths of r-length
+    """
     # to deal with duplicate subsets use
     # set(list(combinations(arr, r)))
-    return list(combinations(arr, r))
+    return list(combinations(edges, r))
 
 
 # Return a list of edge tuples (ex: (1,2))
 # given arr = list of edge keys (ex = A)
-def getEdges(arr):
+def getEdges(edge_keys: list) -> list[int]:
+    """
+    _summary_
+
+    Parameters
+    ----------
+    edge_keys : List
+        _description_
+
+    Returns
+    -------
+    list
+        A list of edge tuples(ex: [(1,2) ,(2,4) ,(4,1)])
+    """
     # return a list of all edge values
     # arr is a tuple of keys in edges
     # uses list comprehension
-    return [edges[k] for k in arr]
+    return [edges[k] for k in edge_keys]
 
 
 # Given a path length generate
@@ -53,8 +88,8 @@ def getEdges(arr):
 def generateGraphs(path_len, forest=False):
 
     graphs = []
-    # All path_len path graphs
-    paths = rSubset(edges, path_len)
+    # graphspath_len path graphs
+    paths = generate_path_combinations(edges, path_len)
     print(len(paths))
     graphs_len = len(paths)
     for i in range(graphs_len):

@@ -6,37 +6,41 @@ import numpy as np
 import string
 from itertools import combinations
 
-from Graph import generateGraphs
+from Graph import generate_graphs
 
 # canvas size
 # This varaible is manually modified and caclulated
 # This was done to keep the code readable
 dimension = 198
 # grid cell dimension
-diviser = 3
+DIVISER = 3
 # canvas space division
-part = dimension / diviser
+PART = dimension / DIVISER
 # cell division
-div = part // 2
+DIV = PART // 2
+
+path = (
+    "/Users/josesaravia/Projects/Typography/Generative_Typeface/glyph_design_space.pdf"
+)
 
 # Graph Node Positions for drawBot drawing
 # 1 2 3 c
 # 4 5 6 b
 # 7 8 9 a
 # a b c
-a = div
-b = div + part
-c = div + part * 2
-positions = {
-    1: (a, c),
-    2: (b, c),
-    3: (c, c),
-    4: (a, b),
-    5: (b, b),
-    6: (c, b),
-    7: (a, a),
-    8: (b, a),
-    9: (c, a),
+A = DIV
+B = DIV + PART
+C = DIV + PART * 2
+POSITIONS = {
+    1: (A, C),
+    2: (B, C),
+    3: (C, C),
+    4: (A, B),
+    5: (B, B),
+    6: (C, B),
+    7: (A, A),
+    8: (B, A),
+    9: (C, A),
 }
 
 
@@ -44,48 +48,87 @@ positions = {
 
 # --- FUNCTIONS
 
-# Draw Grid
-def drawGrid(width=1):
+
+def draw_grid(width: int = 1) -> None:
+    """
+    Draw Grid of PART X PART
+
+    Parameters
+    ----------
+    width : int, optional
+        Width of Grid Stroke, by default 1
+    """
+    # Set drawing stroke
     draw.stroke(0, 0.1)
     draw.strokeWidth(width)
 
-    draw.line((part, 0), (part, dimension))
-    draw.line((part * 2, 0), (part * 2, dimension))
-    draw.line((0, part), (dimension, part))
-    draw.line((0, part * 2), (dimension, part * 2))
+    # Draw PART * PART Grid
+    draw.line((PART, 0), (PART, dimension))
+    draw.line((PART * 2, 0), (PART * 2, dimension))
+    draw.line((0, PART), (dimension, PART))
+    draw.line((0, PART * 2), (dimension, PART * 2))
 
 
-# rad = radius
-# color =
-# Draw grid/graph nodes
-def drawNodes(rad=1, color=(1, 0, 0, 1)):
+def draw_nodes(rad: int = 1, color: tuple = (1, 0, 0, 1)) -> None:
+    """
+    Draws All Grid Graph Nodes
+
+    Parameters
+    ----------
+    rad : int, optional
+        Radius of Node, by default 1
+    color : tuple, optional
+        Color(rgba) of Node, by default RED
+    """
     # Pen Setup
     (r, g, b, a) = color
     draw.fill(r, g, b, a)
     draw.stroke(None)
+
     # Draw Nodes
-    for point in positions.values():
+    for point in POSITIONS.values():
         (x, y) = point
-        # print(x, y)
+        # Subtract rad//2 to compensate for Drawbot Drawing
+        # Ensures written in center
         draw.oval(x - rad // 2, y - rad // 2, rad, rad)
 
 
-# Non recursive Draw
-# Primitive line drawing not a path
-def drawGraphSkeleton(G, width=1):
+def draw_graph_skeleton(G: nx.Graph, width: int = 1) -> None:
+    """
+    Draws a simple skeleton of the Graph. Mostly used for debugging.
+    This drawing is a primative line drawing, not a Drawbot Path that is drawn recursively.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph to draw skeleton of
+    width : int, optional
+        Width of Graph Skeleton Stroke, by default 1
+    """
+    # Pen Setup
     draw.stroke(0)
     draw.strokeWidth(width)
     draw.stroke(1, 0, 0)
+
+    # Iteratively draw lines
     for e in list(G.edges):
-        # print(e)
+        # Tuple of ints corresponding to keys in POSITIONS
         a, b = e
-        draw.line(positions[a], positions[b])
+        draw.line(POSITIONS[a], POSITIONS[b])
 
 
-# Non recursive Draw
-# Path drawing not connected
-def drawGraphSimple(g, width=30):
+def draw_graph_simple(G: nx.Graph, width: int = 30) -> None:
+    """
+    Draws a simple Graph using disconnected DrawBot paths.
+    Path is not drawn recursively.
 
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph to draw
+    width : int, optional
+        Width of Graph Stroke, by default 30
+    """
     draw.newPath()
     # Set up
     draw.stroke(0)
@@ -95,73 +138,97 @@ def drawGraphSimple(g, width=30):
     draw.lineJoin("miter")
     draw.miterLimit(5)
 
-    for e in list(g.edges):
+    # Iteratively add lines to path
+    for e in list(G.edges):
         a, b = e
-        draw.moveTo(positions[a])
-        draw.lineTo(positions[b])
+        draw.moveTo(POSITIONS[a])
+        draw.lineTo(POSITIONS[b])
 
     draw.drawPath()
 
 
-# TODO: Deal with decimal innrelines (font weight)
+# TODO: Deal with decimal innerlines (font weight)
 # TODO: Make width and innerLine proportional
-# TODO: Add R (readability) variable
+# TODO: Add R (readability) variable (font abstraction)
 # TODO: Add rounding of glyph variable
-# TODO: Make sure each varianet looks nice
-# Given a graph of nodes it generates a layered glyph
-# g = Graph with nodes
-# width = stroke width
-# innerLines = white paths inside glyph (font weigth)
-def drawGlyph(g, width=3, innerLines=7):
+# TODO: Make sure each varient looks nice
+# TODO: Create Recursive Version
+# TODO: Move drawing mechanism to a differnt location, instead return a Path
+def draw_glyph(G: nx.Graph, stroke_width=3, inner_strokes=7) -> None:
+    """
+    Given a graph ``G``, use its nodes and edges to create a glyph with n-``inner_strokes`` white paths
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph to draw into a Glyph
+    stroke_width : int, optional
+        Width of glyph stroke, by default 3
+    inner_strokes : int, optional
+        Number of white paths inside the glyph, by default 7
+    """
+    # D: Dimensions of Glyps (D x D)
+    # S: Spacers, the number of micro-grid partitions (S x S). Think of them as channels.
+    # R: Readability controlled by the spacing between stroke groups (Disabled for now)
+    # C: Spacer (Channel) dimmension
+    # Each S is CxC, and SxS = DxD = (3C)^6
 
     # Size of glyph
     D = dimension
-    # Number of space channels
-    S = (innerLines * diviser) + diviser
-    # Increasing r in (a*width) increases readability
-    # or the spacing between stroke groups
+    # Grid is broken into a smaller parts.
+    S = (inner_strokes * DIVISER) + DIVISER
     R = 0
-    # Size of channel
-    C = (D - (R * width)) / S
+    C = (D - (R * stroke_width)) / S
 
-    # print(C)
-    # print(np.rint([innerLines])[0])
     # Set up
-    srcShape = draw.BezierPath()
+    src_shape = draw.BezierPath()
     draw.stroke(0)
     draw.fill(None)
-    draw.strokeWidth(width)
+    draw.strokeWidth(stroke_width)
     draw.lineCap("round")
     draw.lineJoin("round")
 
     # Draw Source path based on graph
-    for e in list(g.edges):
+    for e in list(G.edges):
         a, b = e
-        srcShape.moveTo(positions[a])
-        srcShape.lineTo(positions[b])
-        print("Travel: ", getMoveDirection(positions[a], positions[b]))
+        src_shape.moveTo(POSITIONS[a])
+        src_shape.lineTo(POSITIONS[b])
+        print("Travel: ", get_move_direction(POSITIONS[a], POSITIONS[b]))
     print("_________")
-    # Create a russian doll like patter around the source path stroke
-    # Turn original stroke into a shape
-    for i in range(innerLines, 0, -2):
-        expShape = srcShape.expandStroke(C * i, lineCap="square", lineJoin="round")
+
+    # Create a russian doll like patter around the source path stroke (created above)
+    # Turn original stroke into a shape, | -> |=|
+    # TODO: Turn this into a recursive function that build the shape from the inside out
+    for i in range(inner_strokes, 0, -2):
+        expShape = src_shape.expandStroke(C * i, lineCap="square", lineJoin="round")
+        # Remove any overlap lines (shapes)
         expShape.removeOverlap()
-        # print("POINTS: ", expShape.points)
         draw.drawPath(expShape)
 
     # If even space draw the middle line
-    if innerLines % 2 == 0:
-        draw.drawPath(srcShape)
+    if inner_strokes % 2 == 0:
+        draw.drawPath(src_shape)
 
 
-# Determines the direction of travel between two cords
-# start = (x, y) tuple
-# end = (x, y) tuple
-# returns int
-# 1 = horizontal of x travel
-# 0 = vertical or y travel
-# NOTE: only handles straight travel, no diagonals
-def getMoveDirection(start, end):
+def get_move_direction(start: tuple, end: tuple) -> int:
+    """
+    Determines the direction of travel between two cords
+    NOTE: only handles straight travel, no diagonals
+
+    Parameters
+    ----------
+    start : tuple
+        Start coordinate (x1,y1)
+    end : tuple
+        End coordinate (x2, y2)
+
+    Returns
+    -------
+    int
+        1 for horizontal x travel \n
+        0 for vertical y travel
+    """
+    # Check if x cord are equal, if so return 1, return 0
     return int(start[0] == end[0])
 
 
@@ -171,8 +238,8 @@ def drawPolygon(points, vColor=(0, 0, 0), hColor=(0, 0, 0)):
 
     for i in range(len(points) - 1):
         srcShape = draw.BezierPath()
-        print(points[i], getMoveDirection(points[i], points[i + 1]))
-        if getMoveDirection(points[i], points[i + 1]) == 1:
+        print(points[i], get_move_direction(points[i], points[i + 1]))
+        if get_move_direction(points[i], points[i + 1]) == 1:
             (r, g, b) = hColor
             draw.stroke(r, g, b)
             # lineCap("square")
@@ -191,7 +258,7 @@ def drawColoredGlyph(g, width=3, innerLines=7, vColor=(1, 0, 0), hColor=(0.95, 0
     # Size of glyph
     D = dimension
     # Number of space channels
-    S = (innerLines * diviser) + diviser
+    S = (innerLines * DIVISER) + DIVISER
     # Increasing r in (a*width) increases readability
     # or the spacing between stroke groups
     R = 0
@@ -211,8 +278,8 @@ def drawColoredGlyph(g, width=3, innerLines=7, vColor=(1, 0, 0), hColor=(0.95, 0
     # Draw Source path based on graph
     for e in list(g.edges):
         a, b = e
-        srcShape.moveTo(positions[a])
-        srcShape.lineTo(positions[b])
+        srcShape.moveTo(POSITIONS[a])
+        srcShape.lineTo(POSITIONS[b])
 
     # Create a russian doll like patter around the source path stroke
     # Turn original stroke into a shape
@@ -250,11 +317,11 @@ def drawEularianGraph(g, width=30):
         nodes = [u for u, v in nx.eulerian_circuit(H)]
         sink = nodes[0]
         # Start at sink
-        path.moveTo(positions[sink])
+        path.moveTo(POSITIONS[sink])
         for n in nodes[1::]:
-            path.lineTo(positions[n])
+            path.lineTo(POSITIONS[n])
         # End at sink
-        path.lineTo(positions[sink])
+        path.lineTo(POSITIONS[sink])
 
     draw.drawPath(path)
 
@@ -268,8 +335,8 @@ def drawEdges(G, someNode, visited=[], count=0):
     adjs = list(G.adj[someNode])
     for n in adjs:
         count += 1
-        draw.moveTo(positions[someNode])
-        draw.lineTo(positions[n])
+        draw.moveTo(POSITIONS[someNode])
+        draw.lineTo(POSITIONS[n])
         # recursive, the stop is in built into the iteration
         # if no adj, then this isn't called
         if not (n in visited):
@@ -287,7 +354,7 @@ def drawGraph(g):
     draw.lineCap("round")
     # move to first node
     n = list(g.nodes)[0]
-    draw.moveTo(positions[n])
+    draw.moveTo(POSITIONS[n])
     # Draw rest of edges
     drawEdges(g, n)
     draw.drawPath()
@@ -341,7 +408,7 @@ def drawLabelsLand(n, amount=9):
 # dim = grid dimensions (e.i if dim == 3 then 9 graphs per page)
 # hasGrid = draw grid or not
 # hasLabel = draw labels or not
-def drawAllGraphsLand(graphs, w=30, dim=diviser, hasGrid=False, hasLabel=True):
+def drawAllGraphsLand(graphs, w=30, dim=DIVISER, hasGrid=False, hasLabel=True):
     draw.newDrawing()
     # 612 * 792
     draw.newPage("LetterLandscape")
@@ -353,15 +420,15 @@ def drawAllGraphsLand(graphs, w=30, dim=diviser, hasGrid=False, hasLabel=True):
     while i < len(graphs):
 
         # draw correct number of labels based
-        if hasLabel and len(graphs) - i < dim**2:
-            drawLabelsLand(i // (dim**2), len(graphs) - i)
+        if hasLabel and len(graphs) - i < dim ** 2:
+            drawLabelsLand(i // (dim ** 2), len(graphs) - i)
         elif hasLabel:
-            drawLabelsLand(i // (dim**2))
+            drawLabelsLand(i // (dim ** 2))
         elif not hasLabel:
             drawCoverLand(graphs[0].number_of_edges(), len(graphs))
 
         # number of glyphs to draw
-        sub = len(graphs) - i if (len(graphs) - i < dim**2) else dim ** 2
+        sub = len(graphs) - i if (len(graphs) - i < dim ** 2) else dim ** 2
 
         # Draw two page spread
         for j in range(2):
@@ -377,13 +444,13 @@ def drawAllGraphsLand(graphs, w=30, dim=diviser, hasGrid=False, hasLabel=True):
                 for c in range(0, dim):
                     # Second loop draw glyphs
                     if j == 1:
-                        drawGlyph(graphs[i - sub], 0.25, innerLines=5)
+                        draw_glyph(graphs[i - sub], 0.25, inner_strokes=5)
                         sub -= 1
                     # First loop draw graphs
                     elif not i >= len(graphs):
                         if hasGrid:
-                            drawGrid()
-                        drawGraphSimple(graphs[i], w)
+                            draw_grid()
+                        draw_graph_simple(graphs[i], w)
                     # move canvas by d
                     draw.translate(d, 0)
                     # prevent increase when drawing glyphs
@@ -405,7 +472,7 @@ def drawAllGraphsLand(graphs, w=30, dim=diviser, hasGrid=False, hasLabel=True):
     draw.endDrawing()
 
 
-def drawAllGraphs(graphs, w=30, dim=diviser, hasGrid=False, hasLabel=True):
+def drawAllGraphs(graphs, w=30, dim=DIVISER, hasGrid=False, hasLabel=True):
     draw.newDrawing()
     # 612 * 792
     draw.newPage("Letter")
@@ -416,10 +483,10 @@ def drawAllGraphs(graphs, w=30, dim=diviser, hasGrid=False, hasLabel=True):
     while i < len(graphs):
 
         # draw correct number of labels
-        if hasLabel and len(graphs) - i < dim**2:
-            drawLabels(i // (dim**2), len(graphs) - i)
+        if hasLabel and len(graphs) - i < dim ** 2:
+            drawLabels(i // (dim ** 2), len(graphs) - i)
         elif hasLabel:
-            drawLabels(i // (dim**2))
+            drawLabels(i // (dim ** 2))
         elif not hasLabel:
             drawCover(graphs[0].number_of_edges(), len(graphs))
 
@@ -431,9 +498,9 @@ def drawAllGraphs(graphs, w=30, dim=diviser, hasGrid=False, hasLabel=True):
                 if i >= len(graphs):
                     break
                 if hasGrid:
-                    drawGrid()
+                    draw_grid()
                 # drawGlyph(graphs[i - sub], w, innerLines=7)
-                drawGraphSimple(graphs[i], w)
+                draw_graph_simple(graphs[i], w)
                 # move canvas by d
                 draw.translate(d, 0)
                 i += 1
@@ -498,71 +565,3 @@ def openPreview(path):
     import os
 
     os.system(f"open --background -a Preview {path}")
-
-
-# HOLDS ALL GRAPHS
-all_graphs = generateGraphs(8, forest=True)
-
-i = 1
-G = all_graphs[i]
-print("Graph", i, "is a forest:", nx.is_forest(G))
-print("Number of forest: ", len(all_graphs))
-
-# ---- DRAWING
-
-draw.newDrawing()
-draw.size(dimension * 3, dimension * 3)
-drawGrid()
-drawNodes(10)
-# drawGraph(G)
-drawGlyph(all_graphs[28], innerLines=2)
-draw.translate(dimension, 0)
-# drawGraphSimple(all_graphs[4])
-drawGlyph(all_graphs[28], innerLines=3)
-draw.translate(dimension, 0)
-# drawEularianGraph(all_graphs[17])
-# drawGlyph(all_graphs[28], innerLines=4)
-drawColoredGlyph(all_graphs[20])
-draw.translate(0, dimension)
-# drawGlyph(all_graphs[28], innerLines=5)
-drawColoredGlyph(all_graphs[23])
-draw.translate(-dimension, 0)
-# drawGlyph(all_graphs[28])
-drawColoredGlyph(all_graphs[2])
-draw.translate(-dimension, 0)
-drawColoredGlyph(all_graphs[28])
-draw.endDrawing()
-
-
-# 6 edge forest
-
-# --- MAIN CODE
-# Generate Graphs
-# graph_6 = generateGraphs(6, forest=True)
-# graph_7 = generateGraphs(7, forest=True)
-# graph_8 = generateGraphs(8, forest=True)
-# drawAllGraphsLand(graph_6)
-# path6 = saveDrawing(6)
-# openPreview(path6)
-# drawAllGraphsLand(graph_7)
-# path7 = saveDrawing(7)
-# openPreview(path7)
-# drawAllGraphsLand(graph_8)
-# path8 = saveDrawing(8)
-# openPreview(path8)
-
-
-# ---- DISPLAY
-# drawAllGraphsLand(graph_7, w = 2, dim = diviser, hasLabel=False)
-# path6 = saveDrawing(7)
-# openPreview(path6)
-
-path = (
-    "/Users/josesaravia/Projects/Typography/Generative_Typeface/glyph_design_space.pdf"
-)
-draw.saveImage(path)
-openPreview(path)
-
-# Typeface ______
-# 8 edge forest
-# 192 combinations

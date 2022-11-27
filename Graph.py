@@ -87,7 +87,7 @@ def convert_to_edge_tuples(edge_keys: list) -> list[tuple[int, int]]:
 # Given a path length generate
 # Generate all possible graphs (forest) with
 # path_len edges in a graph with nodes (global)
-def generateGraphs(path_len: int, forest: bool = False) -> list[nx.Graph]:
+def generate_graphs(path_len: int, forest: bool = False) -> list[nx.Graph]:
     """
     Generate a list of Graphs with path_len edges
 
@@ -164,6 +164,6 @@ def calc_num_forest(min_edges: int, max_edges: int) -> int:
     """
     counter = 0
     for i in range(min_edges, max_edges + 1):
-        G_List = generateGraphs(i, forest=True)
+        G_List = generate_graphs(i, forest=True)
         counter = counter + len(G_List)
     return counter

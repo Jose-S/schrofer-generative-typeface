@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from Generator import (
-    drawColoredGlyph,
     draw_glyph,
     draw_grid,
     draw_nodes,
     draw_graph_skeleton,
     draw_graph_simple,
+    drawEdges,
+    draw_graph_sequentially,
+    drawGraph,
     openPreview,
 )
 from Graph import generate_graphs
@@ -16,7 +18,7 @@ DIMENSION = 198
 
 def main():
     # HOLDS ALL GRAPHS
-    all_graphs = generate_graphs(8, forest=True)
+    all_graphs = generate_graphs(7, forest=True)
 
     i = 1
     G = all_graphs[i]
@@ -30,22 +32,23 @@ def main():
     draw_grid()
     draw_nodes(10)
     # drawGraph(G)
-    draw_glyph(all_graphs[0], inner_strokes=3)
+    draw_glyph(all_graphs[20], inner_strokes=3)
     draw.translate(DIMENSION, 0)
     # draw_graph_simple(all_graphs[1])
     draw_glyph(all_graphs[28], inner_strokes=7)
     draw.translate(DIMENSION, 0)
     # drawEularianGraph(all_graphs[17])
     # drawGlyph(all_graphs[28], innerLines=4)
-    drawColoredGlyph(all_graphs[20])
-    # draw.translate(0, DIMENSION)
-    # # drawGlyph(all_graphs[28], innerLines=5)
-    # drawColoredGlyph(all_graphs[23])
-    # draw.translate(-DIMENSION, 0)
-    # # drawGlyph(all_graphs[28])
-    # drawColoredGlyph(all_graphs[2])
-    # draw.translate(-DIMENSION, 0)
-    # drawColoredGlyph(all_graphs[28])
+    draw_glyph(all_graphs[20], v_stroke_color=(1, 0, 0), h_stroke_color=(1, 0, 0))
+    draw.translate(0, DIMENSION)
+    # drawGlyph(all_graphs[28], innerLines=5)
+    draw_glyph(all_graphs[20], v_stroke_color=(1, 0, 0), h_stroke_color=(0, 1, 0))
+    draw.translate(-DIMENSION, 0)
+    # drawGlyph(all_graphs[28])
+    draw_graph_sequentially(all_graphs[28])
+    draw.translate(-DIMENSION, 0)
+    drawGraph(all_graphs[28])
+    # print(all_graphs[28].nodes)
     draw.endDrawing()
 
     # 6 edge forest

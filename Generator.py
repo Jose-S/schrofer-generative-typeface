@@ -1,3 +1,4 @@
+from platform import node
 from drawBot import _drawBotDrawingTool as draw
 import networkx as nx
 
@@ -154,9 +155,17 @@ def draw_graph_simple(G: nx.Graph, width: int = 30) -> None:
 # TODO: Make sure each varient looks nice
 # TODO: Create Recursive Version
 # TODO: Move drawing mechanism to a differnt location, instead return a Path
-def draw_glyph(G: nx.Graph, stroke_width=3, inner_strokes=7) -> None:
+def draw_glyph(
+    G: nx.Graph,
+    stroke_width=3,
+    inner_strokes=7,
+    v_stroke_color: tuple = (0, 0, 0),
+    h_stroke_color: tuple = (0, 0, 0),
+) -> None:
     """
-    Given a graph ``G``, use its nodes and edges to create a glyph with n-``inner_strokes`` white paths
+    Given a graph ``G``, use its nodes and edges to create a
+    glyph with n-``inner_strokes`` white paths \n
+    Stroke colors can be modified with ``v_stroke_color`` and ``h_stroke_color``
 
     Parameters
     ----------
@@ -166,6 +175,10 @@ def draw_glyph(G: nx.Graph, stroke_width=3, inner_strokes=7) -> None:
         Width of glyph stroke, by default 3
     inner_strokes : int, optional
         Number of white paths inside the glyph, by default 7
+    v_stroke_color: tuple, optional
+        RGB color (r, g, b) for Vertical Strokes, by default (0, 0, 0)
+    h_stroke_color: tuple, optional
+        RGB color (r, g, b) for Horizontal Strokes, by default (0, 0, 0)
     """
     # D: Dimensions of Glyps (D x D)
     # S: Spacers, the number of micro-grid partitions (S x S). Think of them as channels.
@@ -182,7 +195,7 @@ def draw_glyph(G: nx.Graph, stroke_width=3, inner_strokes=7) -> None:
 
     # Set up
     src_shape = draw.BezierPath()
-    draw.stroke(0)
+    draw.stroke(*v_stroke_color if v_stroke_color == h_stroke_color else (0, 0, 0))
     draw.fill(None)
     draw.strokeWidth(stroke_width)
     draw.lineCap("round")
@@ -203,7 +216,11 @@ def draw_glyph(G: nx.Graph, stroke_width=3, inner_strokes=7) -> None:
         expShape = src_shape.expandStroke(C * i, lineCap="square", lineJoin="round")
         # Remove any overlap lines (shapes)
         expShape.removeOverlap()
-        draw.drawPath(expShape)
+        # Decide on stroke color
+        if v_stroke_color == h_stroke_color:
+            draw.drawPath(expShape)
+        else:
+            draw_polygon(expShape.points, v_stroke_color, h_stroke_color)
 
     # If even space draw the middle line
     if inner_strokes % 2 == 0:
@@ -232,92 +249,76 @@ def get_move_direction(start: tuple, end: tuple) -> int:
     return int(start[0] == end[0])
 
 
-def drawPolygon(points, vColor=(0, 0, 0), hColor=(0, 0, 0)):
+def draw_polygon(
+    points: list[tuple], v_color: tuple = (0, 0, 0), h_color: tuple = (0, 0, 0)
+) -> None:
+    """
+    Draw a Polygon containing ``points``, where
+    horizontal lines have a stroke color of ``h_color`` and
+    vertical lines have a stroke color of ``v_color``
 
-    print(len(points))
+    Parameters
+    ----------
+    points : list[tuple]
+        A list of points (x,y) to draw lines between
+    v_color : tuple, optional
+        RGB color (r, g, b), by default (0, 0, 0)
+    h_color : tuple, optional
+        RGB color (r, g, b), by default (0, 0, 0)
+    """
+    # print(len(points))
 
+    # Iterate through each point and draw connecting lines with appropriate color
     for i in range(len(points) - 1):
         srcShape = draw.BezierPath()
-        print(points[i], get_move_direction(points[i], points[i + 1]))
+        # print(points[i], get_move_direction(points[i], points[i + 1]))
+        # TODO: shorten to tertiary operator and rename get_move_direction
         if get_move_direction(points[i], points[i + 1]) == 1:
-            (r, g, b) = hColor
+            (r, g, b) = h_color
             draw.stroke(r, g, b)
             # lineCap("square")
         else:
-            (r, g, b) = vColor
+            (r, g, b) = v_color
             draw.stroke(r, g, b)
             # lineCap("butt")
-
+        # TODO: Instead of drawing each time, simply add lines to BezierPath to return
         srcShape.line(points[i], points[i + 1])
         draw.drawPath(srcShape)
     # drawPath(srcShape)
 
 
-def drawColoredGlyph(g, width=3, innerLines=7, vColor=(1, 0, 0), hColor=(0.95, 0, 0)):
+def draw_graph_sequentially(G: nx.Graph, width: int = 30) -> None:
+    """
+    Draw Graph sequentially. Draw from node to node using the Graph's Eularian Circuit.
 
-    # Size of glyph
-    D = dimension
-    # Number of space channels
-    S = (innerLines * DIVISER) + DIVISER
-    # Increasing r in (a*width) increases readability
-    # or the spacing between stroke groups
-    R = 0
-    # Size of channel
-    C = (D - (R * width)) / S
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph to draw.
+    width : int, optional
+        Stroke widhth, by default 30
+    """
 
-    # print(C)
-    # print(np.rint([innerLines])[0])
     # Set up
-    srcShape = draw.BezierPath()
-    draw.stroke(0)
-    draw.fill(None)
-    draw.strokeWidth(width)
-    draw.lineCap("round")
-    draw.lineJoin("round")
-
-    # Draw Source path based on graph
-    for e in list(g.edges):
-        a, b = e
-        srcShape.moveTo(POSITIONS[a])
-        srcShape.lineTo(POSITIONS[b])
-
-    # Create a russian doll like patter around the source path stroke
-    # Turn original stroke into a shape
-    for i in range(innerLines, 0, -2):
-        expShape = srcShape.expandStroke(C * i, lineCap="square", lineJoin="round")
-        expShape.removeOverlap()
-        drawPolygon(expShape.points, vColor, hColor)
-
-    # If even space draw the middle line
-    if innerLines % 2 == 0:
-        draw.drawPath(srcShape)
-
-
-# Transform tree graphs to Eularian Graph
-# (where each edge is treated as a pair of arcs
-# Then draw a path using the nodes generated by
-# the Eularian circuit
-def drawEularianGraph(g, width=30):
-
     path = draw.BezierPath()
-    # Set up
     draw.stroke(0)
     draw.fill(None)
     draw.strokeWidth(width)
     draw.lineCap("round")
     draw.lineJoin("round")
+    # Generate all connected sub-graphs
+    sub_g: list[nx.Graph] = [G.subgraph(c).copy() for c in nx.connected_components(G)]
+    # Filter out single node graphs
+    sub_g = list(filter(lambda g: g.number_of_nodes() > 1, sub_g))
 
-    # Generate all connected componnet graphs anf ilter out single node graphs
-    S = [g.subgraph(c).copy() for c in nx.connected_components(g)]
-    S = list(filter(lambda g: g.number_of_nodes() > 1, S))
-
-    for graph in S:
-
-        H = nx.eulerize(graph)
-        nodes = [u for u, v in nx.eulerian_circuit(H)]
-        sink = nodes[0]
+    for graph in sub_g:
+        # Get sequence of vertices in the Eulerian circuit
+        euler_graph = nx.eulerize(graph)
+        nodes = [u for u, v in nx.eulerian_circuit(euler_graph)]
         # Start at sink
+        sink = nodes[0]
         path.moveTo(POSITIONS[sink])
+        # Draw line to rest of points
         for n in nodes[1::]:
             path.lineTo(POSITIONS[n])
         # End at sink
@@ -333,6 +334,7 @@ def drawEularianGraph(g, width=30):
 def drawEdges(G, someNode, visited=[], count=0):
     # get neighbors
     adjs = list(G.adj[someNode])
+    # print(adjs)
     for n in adjs:
         count += 1
         draw.moveTo(POSITIONS[someNode])
